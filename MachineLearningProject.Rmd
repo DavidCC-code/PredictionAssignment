@@ -66,19 +66,22 @@ library(gbm)
 
 ```
 
+First of all we will try to exclude null columns, or mostly NA columns, columns that we already know not to be relevanta as user names, date ant time stamps.
 
-
-```{r}
+```{r clean data}
 
 treshold <- dim(training)[1] * 0.95
 NAscolumns <- apply(training, 2, function(x) sum(is.na(x)) > treshold  || sum(x=="") > treshold)
+
+not_relevant <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp")
 
 ncol(training[,NAscolumns])
 training <- training[, !NAscolumns]
 ```
 
 There are 100 columns containing more than 95% of NAs values or empty. We will not use them as predictors.
-We will also check for varibles with near zero variance.
+We will also check for varibles with near zero variance. 
+
 
 ```{r}
 nzvCols <- nzv(training, saveMetrics = TRUE)
@@ -87,6 +90,22 @@ table(training$new_window)
 
 training <- training[,nzvCols$nzv==FALSE]
 ```
+
+These same transformatiors are applied to the provided testing dataset.
+
+```{r}
+NAscolumns <- apply(test, 2, function(x) sum(is.na(x)) > treshold  || sum(x=="") > treshold)
+
+ncol(test[,NAscolumns])
+training <- training[, !NAscolumns]
+
+nzvCols <- nzv(training, saveMetrics = TRUE)
+nzvCols[nzvCols$nzv,]
+table(training$new_window)
+
+training <- training[,nzvCols$nzv==FALSE]
+```
+
 
 We will extract 30% of data out of the training dataset to create validation dataset.
 
@@ -98,9 +117,9 @@ training <- training[-inValidation, ]
 rm(inValidation)
 ```
 
-## Models training and validation
+## Model training and validation
 
-Due to the data set many freatures and the, a priori, lack of knowledge about the weight of each of them in the classification, we will train two models that can work well with classifications and can  manage that situation, gradient boosting model and random forest, later we will see which is more accurate using the validation dataset.
+Due to the dataset many freatures and the, a priori, lack of knowledge about the weight of each of them in the classification, we will try  both models which  that can work well with classifications and can  manage that situation, gradient boosting model and random forest, later we will see which is more accurate using the validation dataset.
 
 ```{r}
 mod_gbm <- train(classe ~ ., data=training, method="gbm", verbose=FALSE)
@@ -110,3 +129,5 @@ pred_gbm <- predict(mod_gbm, validation)
 pred_rf <- predict(mod_rf, validation)
 
 ```
+
+
