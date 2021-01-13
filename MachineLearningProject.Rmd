@@ -141,7 +141,17 @@ confusionMatrix(pred_rf, as.factor(validation$classe))
 ose
 ```
 
-As shown by the confusion matrixes  gradient boosting model's accuracy is 96% and random forets' is over 99% which is a very good result and a out of sample error of 0.004%
+As shown by the confusion matrixes  gradient boosting model's accuracy is 96% and random forets' is over 99% which is a very good result and a out of sample error of 0.004% for the validation data set.
+
+## Test
+
+We will run the random forest model on the test dataset and see how performs. 
+
+```{r}
+result <- predict(mod_rf, test)
+result
+```
+
 
 
 
