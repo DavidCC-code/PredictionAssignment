@@ -59,51 +59,44 @@ head(training)
 ## Preprocessing data
 
 
-```{r echo=FALSE}
+```{r echo=FALSE, message =FALSE }
 library(caret)
 library(randomForest)
 library(gbm)
 
 ```
 
-First of all we will try to exclude null columns, or mostly NA columns, columns that we already know not to be relevanta as user names, date ant time stamps.
+First of all we will try to exclude null columns, or mostly NA columns, columns that we already know not to be relevant as user names, date ant time stamps and descriptions (Remove "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window")
 
 ```{r clean data}
 
+## set threshold of NAs values threshold
 treshold <- dim(training)[1] * 0.95
+## identify columns beyond NAs or empty values threshold
 NAscolumns <- apply(training, 2, function(x) sum(is.na(x)) > treshold  || sum(x=="") > treshold)
-
-not_relevant <- c("X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp")
 
 ncol(training[,NAscolumns])
 training <- training[, !NAscolumns]
+
+## Remove "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window",  7 first columns
+training <-training[, -(1:7)]
+
 ```
 
 There are 100 columns containing more than 95% of NAs values or empty. We will not use them as predictors.
 We will also check for varibles with near zero variance. 
 
-
-```{r}
+```{r near zero variance check}
 nzvCols <- nzv(training, saveMetrics = TRUE)
 nzvCols[nzvCols$nzv,]
-table(training$new_window)
 
-training <- training[,nzvCols$nzv==FALSE]
 ```
 
-These same transformatiors are applied to the provided testing dataset.
+We keep the same columns in the test data set. 
 
 ```{r}
-NAscolumns <- apply(test, 2, function(x) sum(is.na(x)) > treshold  || sum(x=="") > treshold)
-
-ncol(test[,NAscolumns])
-training <- training[, !NAscolumns]
-
-nzvCols <- nzv(training, saveMetrics = TRUE)
-nzvCols[nzvCols$nzv,]
-table(training$new_window)
-
-training <- training[,nzvCols$nzv==FALSE]
+traincols <- names(training)
+test <- test[, as.factor(traincols)]
 ```
 
 
@@ -121,7 +114,7 @@ rm(inValidation)
 
 Due to the dataset many freatures and the, a priori, lack of knowledge about the weight of each of them in the classification, we will try  both models which  that can work well with classifications and can  manage that situation, gradient boosting model and random forest, later we will see which is more accurate using the validation dataset.
 
-```{r}
+```{r training and predicting over validation}
 mod_gbm <- train(classe ~ ., data=training, method="gbm", verbose=FALSE)
 mod_rf <- train(classe ~ ., data=training, method="rf")
 
@@ -129,5 +122,26 @@ pred_gbm <- predict(mod_gbm, validation)
 pred_rf <- predict(mod_rf, validation)
 
 ```
+
+
+```{r}
+confusionMatrix(pred_gbm, as.factor(validation$classe))
+
+```
+
+
+
+```{r}
+confusionMatrix(pred_rf, as.factor(validation$classe))
+
+```
+
+```{r}
+ ose <- 1- confusionMatrix(as.factor(validation$classe), pred_rf)$overall[1]
+ose
+```
+
+As shown by the confusion matrixes  gradient boosting model's accuracy is 96% and random forets' is over 99% which is a very good result and a out of sample error of 0.004%
+
 
 
