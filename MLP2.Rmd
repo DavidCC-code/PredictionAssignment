@@ -1,0 +1,157 @@
+---
+title: "Weareble's workout data analysis"
+subtitle: "Machine Learning Course Project"
+author: "David Contreras Carretero"
+date: "8/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
+
+Training and test data set has been provided with the project assignment.
+
+Training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+
+## Exploratory analysis
+
+
+
+```{r}
+ set.seed(1234)
+
+```
+
+```{r load data}
+training <- read.csv("./pml-training.csv")
+test <- read.csv("./pml-testing.csv")
+
+dim(training)
+##names(training)
+```
+
+
+"classe" variable indicates how the exercise was executed, "A" rigth execution, "B" throwing elbows to the front, "C" lifting halfway, "D" lowering halfway or "E" throwing hips to the front. 
+
+```{r}
+table(training$classe, dnn= c("Classe"))
+
+```
+
+
+```{r}
+head(training)
+```
+
+## Preprocessing data
+
+
+```{r echo=FALSE, message =FALSE }
+library(caret)
+library(randomForest)
+library(gbm)
+
+```
+
+First of all we will try to exclude null columns, or mostly NA columns, columns that we already know not to be relevant as user names, date ant time stamps and descriptions (Remove "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window")
+
+```{r clean data}
+
+## set threshold of NAs values threshold
+treshold <- dim(training)[1] * 0.95
+## identify columns beyond NAs or empty values threshold
+NAscolumns <- apply(training, 2, function(x) sum(is.na(x)) > treshold  || sum(x=="") > treshold)
+
+ncol(training[,NAscolumns])
+training <- training[, !NAscolumns]
+
+## Remove "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window",   first 7 columns
+training <-training[, -(1:7)]
+
+```
+
+There are 100 columns containing more than 95% of NAs values or empty. We will not use them as predictors.
+We will also check for varibles with near zero variance. 
+
+```{r near zero variance check}
+nzvCols <- nzv(training, saveMetrics = TRUE)
+nzvCols[nzvCols$nzv,]
+
+```
+
+We keep the same columns in the test data set. 
+
+```{r}
+traincols <- names(training)
+test <- test[, (colnames(test) %in% traincols)]
+```
+
+
+We will extract 30% of data out of the training dataset to create validation dataset.
+
+
+```{r}
+inValidation <- createDataPartition(training$classe, p = 0.30, list = FALSE)
+validation <- training[inValidation, ]
+training <- training[-inValidation, ]
+rm(inValidation)
+```
+
+## Model training and validation
+
+Due to the dataset many freatures and the, a priori, lack of knowledge about the weight of each of them in the classification, we will try  both models which  that can work well with classifications and can  manage that situation, gradient boosting model and random forest, later we will see which is more accurate using the validation dataset.
+
+```{r training and predicting over validation}
+mod_gbm <- train(classe ~ ., data=training, method="gbm", verbose=FALSE)
+mod_rf <- train(classe ~ ., data=training, method="rf")
+
+pred_gbm <- predict(mod_gbm, validation)
+pred_rf <- predict(mod_rf, validation)
+
+```
+
+
+```{r}
+confusionMatrix(pred_gbm, as.factor(validation$classe))
+
+```
+
+
+
+```{r}
+confusionMatrix(pred_rf, as.factor(validation$classe))
+
+```
+
+```{r}
+ ose <- 1- confusionMatrix(as.factor(validation$classe), pred_rf)$overall[1]
+ose
+```
+
+As shown by the confusion matrixes  gradient boosting model's accuracy is 96% and random forets' is over 99% which is a very good result and a out of sample error of 0.004% for the validation data set.
+
+## Test
+
+We will run the random forest model on the test dataset and see how performs. 
+
+```{r}
+result <- predict(mod_rf, test)
+result
+```
+
+
+
+

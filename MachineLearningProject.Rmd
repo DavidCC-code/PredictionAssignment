@@ -40,7 +40,7 @@ training <- read.csv("./pml-training.csv")
 test <- read.csv("./pml-testing.csv")
 
 dim(training)
-names(training)
+##names(training)
 ```
 
 
@@ -78,7 +78,7 @@ NAscolumns <- apply(training, 2, function(x) sum(is.na(x)) > treshold  || sum(x=
 ncol(training[,NAscolumns])
 training <- training[, !NAscolumns]
 
-## Remove "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window",  7 first columns
+## Remove "X", "user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window",   first 7 columns
 training <-training[, -(1:7)]
 
 ```
