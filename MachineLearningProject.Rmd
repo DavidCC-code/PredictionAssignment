@@ -96,7 +96,7 @@ We keep the same columns in the test data set.
 
 ```{r}
 traincols <- names(training)
-test <- test[, as.factor(traincols)]
+test <- test[, (colnames(test) %in% traincols)]
 ```
 
 
