@@ -54,11 +54,6 @@ table(training$classe, dnn= c("Classe"))
 
 ```
 
-
-```{r}
-head(training)
-```
-
 ## Preprocessing data
 
 
