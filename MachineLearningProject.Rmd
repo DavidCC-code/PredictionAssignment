@@ -29,7 +29,6 @@ https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 ## Exploratory analysis
 
 
-
 ```{r}
  set.seed(1234)
 
@@ -41,10 +40,14 @@ test <- read.csv("./pml-testing.csv")
 
 dim(training)
 ##names(training)
+##head (training)
 ```
 
+Training dataset contains 19,622 observations on 160 variables. Most of them are continuous variables that capture values from accelerometers and gyroscopes embeded in the weareables. 
 
-"classe" variable indicates how the exercise was executed, "A" rigth execution, "B" throwing elbows to the front, "C" lifting halfway, "D" lowering halfway or "E" throwing hips to the front. 
+The first seven variables contain data about the subject performing the exercise and date time in which it was performed, those won't be included as predictors.
+
+"classe" variable indicates how the exercise was executed, "A" rigth execution, "B" throwing elbows to the front, "C" lifting halfway, "D" lowering halfway or "E" throwing hips to the front.That is the variable that we want to predict.  
 
 ```{r}
 table(training$classe, dnn= c("Classe"))
@@ -59,7 +62,7 @@ head(training)
 ## Preprocessing data
 
 
-```{r echo=FALSE, message =FALSE }
+```{r echo=FALSE, message =FALSE, warning=FALSE }
 library(caret)
 library(randomForest)
 library(gbm)
@@ -112,7 +115,7 @@ rm(inValidation)
 
 ## Model training and validation
 
-Due to the dataset many freatures and the, a priori, lack of knowledge about the weight of each of them in the classification, we will try  both models which  that can work well with classifications and can  manage that situation, gradient boosting model and random forest, later we will see which is more accurate using the validation dataset.
+Due to the dataset many freatures and the, a priori, lack of knowledge about the weight of each of them in the classification, we will try two models which  can work well with classifications, gradient boosting model and random forest, later we will see which is more accurate using the validation dataset.
 
 ```{r training and predicting over validation}
 mod_gbm <- train(classe ~ ., data=training, method="gbm", verbose=FALSE)
